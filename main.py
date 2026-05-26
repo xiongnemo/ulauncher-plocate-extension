@@ -26,13 +26,16 @@ def _find_plocate():
     return shutil.which("plocate") or shutil.which("locate")
 
 
-def _run_locate(args: list[str], limit: int) -> list[str]:
+def _run_locate(args: list[str], limit: int, case_sensitive: bool = False) -> list[str]:
     cmd = _find_plocate()
     if not cmd:
         return []
+    base_cmd = [cmd, "-l", str(limit)]
+    if not case_sensitive:
+        base_cmd.append("-i")
     try:
         result = subprocess.run(
-            [cmd, "-i", "-l", str(limit)] + args,
+            base_cmd + args,
             capture_output=True, text=True, timeout=5,
         )
         return [l for l in result.stdout.splitlines() if l.strip()]
@@ -40,24 +43,24 @@ def _run_locate(args: list[str], limit: int) -> list[str]:
         return []
 
 
-def search_normal(query: str, limit: int) -> list[str]:
+def search_normal(query: str, limit: int, case_sensitive: bool = False) -> list[str]:
     """Spaces become wildcards: 'da vinci' → '*da*vinci*' (glob pattern)."""
     tokens = query.split()
     if not tokens:
         return []
     # Build glob pattern: each token wrapped in *...*
     pattern = "*" + "*".join(tokens) + "*"
-    return _run_locate([pattern], limit)
+    return _run_locate([pattern], limit, case_sensitive)
 
 
-def search_regex(pattern: str, limit: int) -> list[str]:
+def search_regex(pattern: str, limit: int, case_sensitive: bool = False) -> list[str]:
     """Raw regex mode."""
-    return _run_locate([pattern], limit)
+    return _run_locate([pattern], limit, case_sensitive)
 
 
-def search_path_glob(pattern: str, limit: int) -> list[str]:
+def search_path_glob(pattern: str, limit: int, case_sensitive: bool = False) -> list[str]:
     """Path glob mode: match against full path."""
-    return _run_locate(["--glob", pattern], limit)
+    return _run_locate(["--glob", pattern], limit, case_sensitive)
 
 
 def format_result(path: str) -> tuple[str, str]:
@@ -110,7 +113,7 @@ class KeywordQueryListener(EventListener):
     def on_event(self, event, extension):
         arg = (event.get_argument() or "").strip()
         limit = int(extension.preferences.get("limit", 10))
-        ignore_case = extension.preferences.get("ignore_case", "true") == "true"
+        case_sensitive = extension.preferences.get("case_sensitive", "false") == "true"
 
         if not arg:
             return RenderResultListAction([
@@ -124,11 +127,11 @@ class KeywordQueryListener(EventListener):
 
         # Parse mode
         if arg.startswith("r ") and len(arg) > 2:
-            results = search_regex(arg[2:], limit)
+            results = search_regex(arg[2:], limit, case_sensitive)
         elif arg.startswith("p ") and len(arg) > 2:
-            results = search_path_glob(arg[2:], limit)
+            results = search_path_glob(arg[2:], limit, case_sensitive)
         else:
-            results = search_normal(arg, limit)
+            results = search_normal(arg, limit, case_sensitive)
 
         if not results:
             return RenderResultListAction([

@@ -23,11 +23,21 @@
             "default_value": "10"
         },
         {
-            "id": "ignore_case",
-            "type": "checkbox",
-            "name": "Case insensitive",
-            "description": "Ignore case when searching",
-            "default_value": "true"
+            "id": "case_sensitive",
+            "type": "select",
+            "name": "Case sensitivity",
+            "description": "Case sensitivity for plocate search",
+            "default_value": "false",
+            "options": [
+                {
+                    "text": "Ignore case",
+                    "value": "false"
+                },
+                {
+                    "text": "Case sensitive",
+                    "value": "true"
+                }
+            ]
         }
     ]
 }
