@@ -1,0 +1,33 @@
+{
+    "required_api_version": "2",
+    "name": "Fast File Finder",
+    "description": "Find files instantly using plocate. Spaces are wildcards. Use 'r ' prefix for regex mode.",
+    "developer_name": "Nemo",
+    "icon": "images/icon.png",
+    "options": {
+        "query_debounce": 0.3
+    },
+    "preferences": [
+        {
+            "id": "keyword",
+            "type": "keyword",
+            "name": "Find files",
+            "description": "Keyword to activate this plugin",
+            "default_value": "f"
+        },
+        {
+            "id": "limit",
+            "type": "input",
+            "name": "Max results",
+            "description": "Maximum number of results to show",
+            "default_value": "10"
+        },
+        {
+            "id": "ignore_case",
+            "type": "checkbox",
+            "name": "Case insensitive",
+            "description": "Ignore case when searching",
+            "default_value": "true"
+        }
+    ]
+}
