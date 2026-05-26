@@ -1,12 +1,14 @@
-{
-    "api_version": "2",
-    "commit": "initial",
-    "version": "1.0.0",
-    "required_apps": [
-        {
-            "name": "plocate",
-            "package": "plocate",
-            "command": "plocate"
-        }
-    ]
-}
+[
+    {
+        "required_api_version": "2",
+        "commit": "main",
+        "version": "1.0.0",
+        "required_apps": [
+            {
+                "name": "plocate",
+                "package": "plocate",
+                "command": "plocate"
+            }
+        ]
+    }
+]
