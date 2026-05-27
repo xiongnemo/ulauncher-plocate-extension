@@ -187,9 +187,16 @@ def search(query, limit=10, case_sensitive=False):
 
 def format_result(path):
     p = Path(path)
-    parent = str(p.parent)
     name = p.name or path
-    return name, parent
+    try:
+        is_dir = p.is_dir()
+    except OSError:
+        is_dir = False
+
+    if is_dir and name not in ("/",) and not name.endswith("/"):
+        name = name + "/"
+
+    return f"{name} - {path}", ""
 
 
 class FinderExtension(Extension):
