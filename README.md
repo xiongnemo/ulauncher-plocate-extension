@@ -1,56 +1,39 @@
-# ulauncher-finder
+ulauncher-plocate-extension
 
-Fast file search extension for [Ulauncher](https://ulauncher.io) using [plocate](https://plocate.sesse.net/).
+Fast file search extension for Ulauncher using plocate.
 
-## Features
+Features
 
-- **Spaces are wildcards** — `da vinci` matches `da_vinci.jpg`, `Da Vinci Code.pdf`, etc.
-- **Three search modes:**
-  - `f <query>` — fuzzy glob search (default)
-  - `f r <regex>` — raw regex mode
-  - `f p <pathglob>` — path glob mode (e.g., `f p *.pdf`)
-- **Fast** — powered by plocate's indexed database
-- **Configurable** — result limit, case sensitivity, keyword
+- f da vinci — contains both da and vinci, any order
+- f "da vinci" — exact phrase
+- f da vinci ext:pdf — extension filter
+- f ext:jpg;png cat — multiple extension filters
+- f da vinci path:Music — path substring filter
+- f regex:da.*vinci — regex mode
 
-## Requirements
+Requirements
 
-- [plocate](https://plocate.sesse.net/) (`sudo apt install plocate`)
-- Updated index: `sudo updatedb`
+bash
+sudo apt install plocate
+sudo updatedb
 
-## Installation
 
-### Via Ulauncher Extensions
+Installation
 
-Search for "Fast File Finder" in Ulauncher's extension manager.
-
-### Manual
-
-```bash
+bash
 cd ~/.local/share/ulauncher/extensions/
 git clone https://github.com/xiongnemo/ulauncher-plocate-extension.git nemo.ulauncher-finder
-```
 
-Then restart Ulauncher.
 
-## Usage
+Restart Ulauncher.
 
-| Input | Mode | Example |
-|-------|------|---------|
-| `f da vinci` | Glob | Matches files containing both "da" and "vinci" |
-| `f r \.pdf$` | Regex | Matches files ending in .pdf |
-| `f p *.pdf` | Path glob | Matches .pdf files in the path |
+Usage
 
-- **Enter** → Open file with default app
-- **Alt+Enter** → Copy path to clipboard
+Default keyword: f
 
-## Configuration
+- Enter: open file
+- Alt+Enter: copy path
 
-In Ulauncher Preferences → Extensions → Fast File Finder:
+Notes
 
-- **Keyword** — trigger keyword (default: `f`)
-- **Max results** — number of results to show (default: `10`)
-- **Case insensitive** — ignore case when searching (default: on)
-
-## License
-
-MIT
+This plugin searches file paths only. It does not search file contents.

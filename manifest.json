@@ -1,7 +1,7 @@
 {
     "required_api_version": "2",
     "name": "Fast File Finder",
-    "description": "Find files instantly using plocate. Spaces are wildcards. Use 'r ' prefix for regex mode.",
+    "description": "Find files instantly using plocate. Supports quoted phrases, ext:, path:, and regex:.",
     "developer_name": "Nemo",
     "icon": "images/icon.png",
     "options": {
