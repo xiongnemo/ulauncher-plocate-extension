@@ -1,24 +1,26 @@
 # Fast File Finder (plocate) — Ulauncher Extension
 
-使用 `plocate`（或 `locate`）的索引库实现“秒级”的文件路径搜索。
+[中文说明](README.zh-CN.md)
 
-亮点：
+Instant file-path search for Ulauncher powered by `plocate` (or `locate`).
 
-- 多关键词 AND 搜索（任意顺序）
-- 支持引号短语：`"..."`
-- 支持过滤/模式：`ext:` / `path:` / `regex:`
-- 结果展示：`name - full path`，目录名自动追加 `/`
-- 结果图标：优先使用系统主题图标（GNOME/KDE 等），失败则回退到插件内置图标
+## Features
 
-> 注意：这是“路径搜索”，不是“内容搜索”。
+- AND search with multiple tokens (any order)
+- Quoted phrases: `"..."`
+- Filters / modes: `ext:` / `path:` / `regex:`
+- Result text: `name - full path` (directories end with `/`)
+- Icons: uses your current desktop icon theme when possible; falls back to `images/icon.png`
+
+> This extension searches file paths only (not file contents).
 
 ## Requirements
 
-- Ulauncher 5.x（API v2）
-- `plocate`（推荐）或 `locate`
-- `updatedb`（用于生成/更新索引库）
+- Ulauncher 5.x (API v2)
+- `plocate` (recommended) or `locate`
+- `updatedb` (to build/update the index database)
 
-Debian/Ubuntu：
+Debian/Ubuntu:
 
 ```bash
 sudo apt update
@@ -26,7 +28,7 @@ sudo apt install plocate
 sudo updatedb
 ```
 
-可选（用于系统主题图标；通常装了 Ulauncher 就已经满足）：
+Optional (for themed system icons; often already present with Ulauncher installs):
 
 ```bash
 sudo apt install python3-gi gir1.2-gtk-3.0
@@ -34,85 +36,82 @@ sudo apt install python3-gi gir1.2-gtk-3.0
 
 ## Installation
 
+### Option A: Ulauncher Extensions (recommended)
+
+Open and install from the official catalog:
+
+https://ext.ulauncher.io/-/github-xiongnemo-ulauncher-plocate-extension
+
+### Option B: Manual (git clone)
+
 ```bash
 cd ~/.local/share/ulauncher/extensions/
 git clone https://github.com/xiongnemo/ulauncher-plocate-extension.git nemo.ulauncher-finder
 ```
 
-然后重启 Ulauncher。
+Then restart Ulauncher.
 
 ## Configuration
 
-在 Ulauncher Preferences → Extensions → Fast File Finder 中可配置：
+Ulauncher Preferences → Extensions → Fast File Finder:
 
-- **Keyword**：默认 `f`
-- **Max results**：默认 `10`
-- **Case sensitivity**：默认 Ignore case
+- **Keyword** (default: `f`)
+- **Max results** (default: `10`)
+- **Case sensitivity**
 
-说明：
+Notes:
 
-- Case sensitivity 影响 `plocate` 的基础搜索（普通关键词/regex）。
-- `ext:` / `path:` 过滤本身始终不区分大小写。
+- Case sensitivity affects the base `plocate` query (normal tokens / regex).
+- `ext:` and `path:` filtering is always case-insensitive.
 
 ## Usage
 
-触发：`f <query>`（或你配置的 keyword）。
+Trigger: `f <query>` (or your configured keyword).
 
-### Query Syntax
+### Query syntax
 
 - `f da vinci`
-	- AND 搜索：路径里同时包含 `da` 和 `vinci`（任意顺序）
+  - AND search: matches paths containing both tokens
 - `f "da vinci"`
-	- 把带空格的短语当作一个整体 token
+  - treat the phrase as a single token
 - `f report ext:pdf`
-	- 按扩展名过滤（例如 `.pdf`）
+  - extension filter
 - `f cat ext:jpg;png`
-	- 多扩展名：用 `;` 或 `,` 分隔
+  - multiple extensions separated by `;` or `,`
 - `f invoice path:Downloads`
-	- 路径子串过滤（匹配完整路径字符串）
-	- 支持多个 `path:`：例如 `path:Downloads path:2026`，需要全部命中
+  - path substring filter (can be repeated; all parts must match)
 - `f regex:da.*vinci`
-	- 正则模式（等价于 `plocate --regex` 的行为；语法以 `man plocate` 为准）
-
-组合示例：
-
-- `f budget ext:xlsx path:Work`
+  - regex mode (delegates to `plocate --regex`; see `man plocate`)
 
 ### Actions
 
-- **Enter**：打开文件/目录
-- **Alt+Enter**：复制完整路径
+- **Enter**: open file/folder
+- **Alt+Enter**: copy full path
 
 ## Troubleshooting
 
-### 为什么新建的文件搜不到？
+### New files are not found
 
-`plocate` 只查询索引库，不会实时扫描磁盘。新文件/移动/重命名后，需要更新 DB 才能搜到：
+`plocate` searches an index database. New/renamed/moved files appear only after an update:
 
 ```bash
 sudo updatedb
 ```
 
-如果你希望自动更新（systemd）：
+To enable periodic updates (systemd):
 
 ```bash
 sudo systemctl enable --now plocate-updatedb.timer
 ```
 
-另外，`/etc/updatedb.conf` 里的 `PRUNEPATHS` / `PRUNEFS` 可能会排除某些目录或文件系统，导致“永远搜不到”。
+Also check `/etc/updatedb.conf` (`PRUNEPATHS` / `PRUNEFS`) if some locations are excluded.
 
-### 没有系统图标 / 图标都一样
+### Missing themed icons
 
-- 插件会自动回退到 `images/icon.png`
-- 确认安装了 GTK/Gio 的 Python 绑定（见 Requirements 的可选项）
-- 一些极简环境没有完整的 icon theme，也可能导致主题图标查找失败
-
-### 搜索很慢或直接没结果
-
-- 插件调用 `plocate` 有 5 秒超时；复杂正则可能导致超时
-- 建议先在终端复现：`plocate -l 20 <pattern>` 或 `plocate --regex <regex>`，确认 `plocate` 本身是否耗时
+- The extension falls back to `images/icon.png`
+- Install the optional GTK/Gio Python bindings listed above
 
 ## Notes
 
-- 只搜索“路径”，不搜索文件内容。
-- 结果来自索引库：已删除/移动的旧路径可能会短暂存在，直到下次 `updatedb`。
+- Path search only; no content search.
+- Results come from the index database; deleted paths may linger until the next `updatedb`.
