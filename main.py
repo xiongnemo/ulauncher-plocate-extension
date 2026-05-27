@@ -11,7 +11,18 @@ Syntax:
 import shlex
 import shutil
 import subprocess
+from functools import lru_cache
 from pathlib import Path
+
+try:
+    import gi
+
+    gi.require_version("Gio", "2.0")
+    gi.require_version("Gtk", "3.0")
+    from gi.repository import Gio, Gtk
+except Exception:
+    Gio = None
+    Gtk = None
 
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
@@ -25,6 +36,75 @@ from ulauncher.api.shared.action.CopyToClipboardAction import CopyToClipboardAct
 
 def find_plocate():
     return shutil.which("plocate") or shutil.which("locate")
+
+
+_SYSTEM_ICON_LOOKUP_SIZE = 64
+_ICON_THEME = Gtk.IconTheme.get_default() if Gtk else None
+
+
+@lru_cache(maxsize=512)
+def _lookup_themed_icon_file(icon_name: str, size: int):
+    if not _ICON_THEME or not Gtk or not icon_name:
+        return None
+
+    # Prefer non-SVG icons since GdkPixbuf SVG support is loader-dependent.
+    for flags in (
+        Gtk.IconLookupFlags.FORCE_SIZE | Gtk.IconLookupFlags.NO_SVG,
+        Gtk.IconLookupFlags.FORCE_SIZE,
+    ):
+        info = _ICON_THEME.lookup_icon(icon_name, size, flags)
+        if not info:
+            continue
+        filename = info.get_filename()
+        if filename:
+            return filename
+
+    return None
+
+
+def _gicon_to_icon_path(icon, size: int):
+    if not Gio or not icon:
+        return None
+
+    # Unwrap emblems.
+    if isinstance(icon, Gio.EmblemedIcon):
+        return _gicon_to_icon_path(icon.get_icon(), size)
+
+    if isinstance(icon, Gio.FileIcon):
+        file = icon.get_file()
+        return file.get_path() if file else None
+
+    if isinstance(icon, Gio.ThemedIcon):
+        names = list(icon.get_names() or [])
+        preferred = [n for n in names if not n.endswith("-symbolic")]
+        fallback = [n for n in names if n.endswith("-symbolic")]
+        for name in preferred + fallback:
+            filename = _lookup_themed_icon_file(name, size)
+            if filename:
+                return filename
+
+    return None
+
+
+@lru_cache(maxsize=4096)
+def get_system_icon_path(path: str, size: int = _SYSTEM_ICON_LOOKUP_SIZE):
+    """Resolve a filesystem path to an icon file from the current GTK icon theme.
+
+    Returns an absolute icon file path (PNG/SVG), or None on failure.
+    """
+    if not (Gio and Gtk and _ICON_THEME):
+        return None
+
+    try:
+        info = Gio.File.new_for_path(path).query_info(
+            "standard::icon",
+            Gio.FileQueryInfoFlags.NONE,
+            None,
+        )
+        icon = info.get_icon() if info else None
+        return _gicon_to_icon_path(icon, size)
+    except Exception:
+        return None
 
 
 def parse_bool(value, default=False):
@@ -176,9 +256,20 @@ def search(query, limit=10, case_sensitive=False):
     if not patterns and not ext_filters and not path_filters:
         return []
 
-    # If the user only provides ext:/path:, use a broad glob pattern.
-    locate_patterns = patterns if patterns else ["*"]
-    raw = run_plocate(locate_patterns, limit, case_sensitive=case_sensitive, regex=False)
+    # Use plocate to prefilter ext:/path: queries instead of searching "*" first.
+    base_patterns = list(patterns)
+    if not case_sensitive:
+        base_patterns.extend(path_filters)
+
+    def _run(pats):
+        return run_plocate(pats or ["*"], limit, case_sensitive=case_sensitive, regex=False)
+
+    if ext_filters:
+        raw = []
+        for ext in sorted(ext_filters):
+            raw.extend(_run(base_patterns + [ext]))
+    else:
+        raw = _run(base_patterns)
 
     filtered = post_filter(raw, ext_filters, path_filters, max(limit * 3, limit))
     filtered.sort(key=lambda p: score_path(p, patterns))
@@ -250,8 +341,9 @@ class KeywordQueryListener(EventListener):
         items = []
         for path in results:
             name, parent = format_result(path)
+            icon = get_system_icon_path(path) or "images/icon.png"
             items.append(ExtensionSmallResultItem(
-                icon="images/icon.png",
+                icon=icon,
                 name=name,
                 description=parent,
                 on_enter=OpenAction(path),
