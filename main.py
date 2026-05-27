@@ -193,8 +193,8 @@ def format_result(path):
 
 
 class FinderExtension(Extension):
-    def init(self):
-        super().init()
+    def __init__(self):
+        super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryListener())
         self.subscribe(ItemEnterEvent, ItemEnterListener())
 
@@ -204,7 +204,7 @@ class ItemEnterListener(EventListener):
         path = event.get_data()
         return RenderResultListAction([
             ExtensionSmallResultItem(
-                icon="images/file.png",
+                icon="images/icon.png",
                 name="Copy path",
                 description=path,
                 on_enter=CopyToClipboardAction(path),
@@ -244,7 +244,7 @@ class KeywordQueryListener(EventListener):
         for path in results:
             name, parent = format_result(path)
             items.append(ExtensionSmallResultItem(
-                icon="images/file.png",
+                icon="images/icon.png",
                 name=name,
                 description=parent,
                 on_enter=OpenAction(path),
